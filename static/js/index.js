@@ -7,6 +7,15 @@ function init() {
 	perform_count_check()
 }
 
+function captcha_init() {
+	init()
+	
+	grecaptcha.render(document.getElementById("generate_button"), {
+		"sitekey": "6Leuh5EUAAAAALediEIgey5dKbm1_P97zvzxjgvC",
+		"callback": "on_captcha_valid"
+	})
+}
+
 function on_count_received(resp) {
 	$("#account_count").prop("count", (localStorage.getItem("accounts") || 0)).animate({
 		count: parseInt(resp)
@@ -42,24 +51,31 @@ function on_generated(acc_data) {
 	
 	$("#acc_login").html(`Login: <strong>${acc_data.login}</strong>`)
 	$("#acc_pass").html(`Password: <strong>${acc_data.password}</strong>`)
-	$("#acc_email").html(`<a href="https://inboxkitten.com/inbox/${acc_data.email.split("@")[0]}/list">E-Mail address: ${acc_data.email}`)
+	$("#acc_email").html(`E-Mail address: <a href="https://inboxkitten.com/inbox/${acc_data.email.split("@")[0]}/list" target="_blank">${acc_data.email}</a>`)
 	
 	$("#generated_data").show("slow")
 	$("#generate_button").show("slow")
-	$("#generate_button").text("Generate another account")
 }
 
-function on_generate_click() {
-	init()
-	
-	$("#generate_button").hide()
-	$("#generate_progress").show("slow")
-	
-	$.ajax({
-		url: "https://catbot.club:2053/account"
-	}).done(function(resp) {
-		on_generated(resp)
+function on_captcha_valid(token) {
+	return new Promise(function(resolve, reject) {
+		init()
+		
+		$("#generate_button").hide()
+		$("#generate_progress").show("slow")
+		
+		$.ajax({
+			url: "https://catbot.club:2053/account/" + token
+		}).done(function(resp) {
+			on_generated(resp)
+		})
+		
+		grecaptcha.reset()
+		captcha_init()
+		resolve()
 	})
 }
 
-$(init)
+function on_captcha_load() {
+	$(captcha_init)
+}
